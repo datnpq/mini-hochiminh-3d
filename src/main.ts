@@ -163,10 +163,10 @@ const hud = new HUD(hudContainer, initialVisibility, {
     immersiveWorld.setActive(mode !== 'none');
     hud.setState({ following: false, exploreMode: mode, visibility });
     const toastMap: Record<Exclude<ExploreMode, 'none'>, string> = {
-      drive: `🚗 ${t(lang, 'modeDrive')} — WASD + kéo chuột xoay góc nhìn`,
-      walk: `🚶 ${t(lang, 'modeWalk')} — WASD + kéo chuột nhìn xung quanh`,
-      'metro-ride': `🚇 ${t(lang, 'modeMetro')} — Kéo chuột ngắm toàn cảnh`,
-      drone: `🛸 ${t(lang, 'modeDrone')} — WASD + Space / Q + kéo chuột`
+      drive: `${t(lang, 'modeDrive')} • WASD + Kéo chuột xoay`,
+      walk: `${t(lang, 'modeWalk')} • WASD + Kéo chuột nhìn`,
+      'metro-ride': `${t(lang, 'modeMetro')} • Kéo chuột ngắm phố`,
+      drone: `${t(lang, 'modeDrone')} • WASD + Space / Q`
     };
     if (mode !== 'none') hud.showToast(toastMap[mode]);
   },

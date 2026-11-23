@@ -32,6 +32,21 @@ export interface HudCallbacks {
   onVirtualKey: (key: keyof KeyState, pressed: boolean) => void;
 }
 
+// Crisp geometric Saigon Signage inline SVG icons (zero emojis)
+const ICON = {
+  explore: `<svg class="hud-icon" viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>`,
+  subway: `<svg class="hud-icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="14"/><line x1="4" y1="11" x2="20" y2="11"/><line x1="8" y1="17" x2="5" y2="21"/><line x1="16" y1="17" x2="19" y2="21"/></svg>`,
+  radar: `<svg class="hud-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="12" x2="18.5" y2="5.5"/></svg>`,
+  theme: `<svg class="hud-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16"/></svg>`,
+  layers: `<svg class="hud-icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 12 12 17 22 12"/><polyline points="2 17 12 22 22 17"/></svg>`,
+  camera: `<svg class="hud-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M3 7V3h4M21 7V3h-4M3 17v4h4M21 17v4h-4"/></svg>`,
+  play: `<svg class="hud-icon" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/></svg>`,
+  pause: `<svg class="hud-icon" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/></svg>`,
+  car: `<svg class="hud-icon" viewBox="0 0 24 24"><path d="M3 13l2-5h14l2 5v5H3v-5z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>`,
+  walk: `<svg class="hud-icon" viewBox="0 0 24 24"><circle cx="12" cy="4" r="2"/><path d="M12 7v6l3 3v5M12 13l-3 4v4M9 9h6"/></svg>`,
+  drone: `<svg class="hud-icon" viewBox="0 0 24 24"><rect x="9" y="9" width="6" height="6"/><circle cx="5" cy="5" r="3"/><circle cx="19" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="7" y1="7" x2="9" y2="9"/><line x1="17" y1="7" x2="15" y2="9"/><line x1="7" y1="17" x2="9" y2="15"/><line x1="17" y1="17" x2="15" y2="15"/></svg>`
+};
+
 export class HUD {
   private root: HTMLElement;
   private cb: HudCallbacks;
@@ -105,7 +120,6 @@ export class HUD {
     if (!this.toastEl) return;
     this.toastEl.textContent = message;
     this.toastEl.classList.remove('show');
-    // Force reflow to restart spring animation
     void this.toastEl.offsetWidth;
     this.toastEl.classList.add('show');
     if (this.toastTimer) window.clearTimeout(this.toastTimer);
@@ -155,7 +169,6 @@ export class HUD {
       this.pilotMetroInfoEl.textContent = `${mv.label} • ${stopTxt}`;
     }
 
-    // Light up keycaps dynamically when pressed!
     const mapKeys: [string, boolean][] = [
       ['forward', keys.forward],
       ['backward', keys.backward],
@@ -216,23 +229,14 @@ export class HUD {
           : this.liveStatus === 'connecting' && this.liveAdsbEnabled
             ? t(this.lang, 'liveConnecting')
             : t(this.lang, 'liveSim');
-      this.liveBadgeEl.innerHTML = `
-        <span class="live-dot-wrap">
-          <span class="live-dot-ping"></span>
-          <span class="live-dot"></span>
-        </span>
-        <span>${label}</span>
-      `;
+      this.liveBadgeEl.innerHTML = `<span class="live-dot"></span><span>${label}</span>`;
     }
 
     if (this.weatherEl) {
       if (this.weather) {
         this.weatherEl.style.display = 'inline-flex';
         this.weatherEl.title = `${this.weather.label[this.lang]} • ${this.weather.windKmh} km/h • ${this.weather.humidity}%`;
-        this.weatherEl.innerHTML = `
-          <span class="weather-icon">${this.weather.icon}</span>
-          <span>${this.weather.tempC}°C</span>
-        `;
+        this.weatherEl.textContent = `SGN ${this.weather.tempC}°C`;
       } else {
         this.weatherEl.style.display = 'none';
       }
@@ -323,45 +327,45 @@ export class HUD {
         : `${Math.round(v.altitude)} m`;
 
     this.vehicleCardEl.innerHTML = `
-      <div class="vc-top-bar" style="background:linear-gradient(90deg, ${v.color}, ${v.accentColor ?? '#38bdf8'})"></div>
-      <div class="vc-header">
-        <div>
-          <div class="vc-badge-row">
-            <span class="vc-badge" style="background:${v.color}">${v.routeCode}</span>
-            <span class="vc-title">${v.label}</span>
+      <div class="vc-top-bar" style="background:${v.color}"></div>
+      <div class="vc-inner">
+        <div class="vc-header">
+          <div>
+            <div class="vc-badge-row">
+              <span class="vc-badge" style="background:${v.color}">${v.routeCode}</span>
+              <span class="vc-title">${v.label}</span>
+            </div>
+            <div class="vc-operator">${v.operator[this.lang]}</div>
           </div>
-          <div class="vc-operator">${v.operator[this.lang]}</div>
+          <button class="vc-close" data-action="close-vc" title="${t(this.lang, 'close')}">×</button>
         </div>
-        <button class="vc-close" data-action="close-vc" title="${t(this.lang, 'close')}">×</button>
-      </div>
-      <div class="vc-grid">
+        <div class="vc-grid">
+          <div>
+            <div class="vc-field-label">${t(this.lang, 'direction')}</div>
+            <div class="vc-field-val">${v.directionLabel[this.lang]}</div>
+          </div>
+          <div>
+            <div class="vc-field-label">${t(this.lang, 'statusLabel')}</div>
+            <div class="vc-field-val">${t(this.lang, statusKey)}</div>
+          </div>
+          <div>
+            <div class="vc-field-label">${t(this.lang, 'speedLabel')}</div>
+            <div class="vc-field-val">${v.speedKmh} km/h</div>
+          </div>
+          <div>
+            <div class="vc-field-label">${t(this.lang, 'altitudeLabel')}</div>
+            <div class="vc-field-val">${altText}</div>
+          </div>
+        </div>
         <div>
-          <div class="vc-field-label">${t(this.lang, 'direction')}</div>
-          <div class="vc-field-val">${v.directionLabel[this.lang]}</div>
+          <div class="vc-field-label">${stopLabel}</div>
+          <div class="vc-field-val">${stopVal}</div>
         </div>
-        <div>
-          <div class="vc-field-label">${t(this.lang, 'statusLabel')}</div>
-          <div class="vc-field-val">${t(this.lang, statusKey)}</div>
+        <div class="vc-progress-track">
+          <div class="vc-progress-fill" style="width:${Math.round(v.progress * 100)}%;background:${v.color}"></div>
         </div>
-        <div>
-          <div class="vc-field-label">${t(this.lang, 'speedLabel')}</div>
-          <div class="vc-field-val">${v.speedKmh} km/h</div>
-        </div>
-        <div>
-          <div class="vc-field-label">${t(this.lang, 'altitudeLabel')}</div>
-          <div class="vc-field-val">${altText}</div>
-        </div>
-      </div>
-      <div>
-        <div class="vc-field-label">${stopLabel}</div>
-        <div class="vc-field-val">${stopVal}</div>
-      </div>
-      <div class="vc-progress-track">
-        <div class="vc-progress-fill" style="width:${Math.round(v.progress * 100)}%;background-image:linear-gradient(90deg, ${v.color}, ${v.accentColor ?? '#7dd3fc'}, ${v.color})"></div>
-      </div>
-      <div class="vc-actions">
         <button class="vc-follow-btn ${this.following ? 'active' : ''}" data-action="toggle-follow">
-          ${this.following ? `◎ ${t(this.lang, 'following')}` : `⊕ ${t(this.lang, 'follow')}`}
+          ${this.following ? t(this.lang, 'following') : t(this.lang, 'follow')}
         </button>
       </div>
     `;
@@ -379,24 +383,21 @@ export class HUD {
   private render(): void {
     const themeLabel =
       this.themeMode === 'auto'
-        ? `◐ ${t(this.lang, 'themeAuto')}`
+        ? t(this.lang, 'themeAuto')
         : this.themeMode === 'day'
-          ? `☀ ${t(this.lang, 'themeDay')}`
-          : `☾ ${t(this.lang, 'themeNight')}`;
+          ? t(this.lang, 'themeDay')
+          : t(this.lang, 'themeNight');
 
     this.root.innerHTML = `
-      <!-- Floating Toast -->
+      <!-- Floating Saigon Stamp Toast -->
       <div class="hud-toast" id="hud-toast"></div>
 
-      <!-- Top Left: Brand, Clock, Live Weather & Interactive Counters -->
+      <!-- Top Left: Saigon Street-Sign Transit Plaque -->
       <div class="hud-card hud-top-left">
-        <div class="brand-row">
+        <div class="plaque-header">
           <div>
             <div class="brand-title">
-              <span class="brand-dot-wrap">
-                <span class="brand-dot-ring"></span>
-                <span class="brand-dot"></span>
-              </span>
+              <span class="brand-tag">SGN</span>
               <h1>${t(this.lang, 'title')}</h1>
             </div>
             <div class="brand-sub">${t(this.lang, 'subtitle')}</div>
@@ -404,37 +405,53 @@ export class HUD {
           <div class="clock-box" id="hud-clock">08:30:00</div>
         </div>
 
-        <div class="live-strip">
-          <span class="live-badge sim" id="hud-live-badge"></span>
-          <span class="weather-pill" id="hud-weather" style="display:none"></span>
-        </div>
+        <div class="plaque-body">
+          <div class="live-strip">
+            <span class="live-badge sim" id="hud-live-badge"></span>
+            <span class="weather-pill" id="hud-weather" style="display:none"></span>
+          </div>
 
-        <div class="stats-row">
-          <button class="stat-pill" data-radar="metro"><span class="stat-dot" style="background:#0077c8"></span>${t(this.lang, 'metro')} <strong id="cnt-metro">0</strong></button>
-          <button class="stat-pill" data-radar="waterbus"><span class="stat-dot" style="background:#f59e0b"></span>${t(this.lang, 'waterbus')} <strong id="cnt-water">0</strong></button>
-          <button class="stat-pill" data-radar="bus"><span class="stat-dot" style="background:#22c55e"></span>${t(this.lang, 'bus')} <strong id="cnt-bus">0</strong></button>
-          <button class="stat-pill" data-radar="flight"><span class="stat-dot" style="background:#e11d48"></span>${t(this.lang, 'flights')} <strong id="cnt-flight">0</strong></button>
+          <div class="stats-row">
+            <button class="stat-pill" data-radar="metro">
+              <span class="stat-pill-top"><span class="stat-dot" style="background:#005eb8"></span>${t(this.lang, 'metro')}</span>
+              <strong id="cnt-metro">0</strong>
+            </button>
+            <button class="stat-pill" data-radar="waterbus">
+              <span class="stat-pill-top"><span class="stat-dot" style="background:#f2b705"></span>${t(this.lang, 'waterbus')}</span>
+              <strong id="cnt-water">0</strong>
+            </button>
+            <button class="stat-pill" data-radar="bus">
+              <span class="stat-pill-top"><span class="stat-dot" style="background:#0f8a5f"></span>${t(this.lang, 'bus')}</span>
+              <strong id="cnt-bus">0</strong>
+            </button>
+            <button class="stat-pill" data-radar="flight">
+              <span class="stat-pill-top"><span class="stat-dot" style="background:#d9381e"></span>${t(this.lang, 'flights')}</span>
+              <strong id="cnt-flight">0</strong>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Top Right: Controls & Animated Drawers -->
+      <!-- Top Right: Mechanical Controls & Drawers -->
       <div class="hud-top-right">
         <div class="hud-card toolbar">
           <button class="tool-btn explore-highlight ${this.openDrawer === 'explore' || this.exploreMode !== 'none' ? 'active' : ''}" data-action="drawer-explore">
-            🎮 ${t(this.lang, 'explore')}
+            ${ICON.explore}<span>${t(this.lang, 'explore')}</span>
           </button>
           <button class="tool-btn ${this.underground ? 'active' : ''}" data-action="underground">
-            🚇 ${t(this.lang, 'underground')}
+            ${ICON.subway}<span>${t(this.lang, 'underground')}</span>
           </button>
           <button class="tool-btn ${this.openDrawer === 'radar' ? 'active' : ''}" data-action="drawer-radar">
-            📡 ${t(this.lang, 'radar')}
+            ${ICON.radar}<span>${t(this.lang, 'radar')}</span>
           </button>
-          <button class="tool-btn" data-action="theme">${themeLabel}</button>
+          <button class="tool-btn" data-action="theme">
+            ${ICON.theme}<span>${themeLabel}</span>
+          </button>
           <button class="tool-btn ${this.openDrawer === 'layers' ? 'active' : ''}" data-action="drawer-layers">
-            ☰ ${t(this.lang, 'layers')}
+            ${ICON.layers}<span>${t(this.lang, 'layers')}</span>
           </button>
           <button class="tool-btn ${this.openDrawer === 'cameras' ? 'active' : ''}" data-action="drawer-cameras">
-            ⌖ ${t(this.lang, 'cameras')}
+            ${ICON.camera}<span>${t(this.lang, 'cameras')}</span>
           </button>
           <button class="tool-btn" data-action="lang">${this.lang.toUpperCase()}</button>
         </div>
@@ -442,81 +459,89 @@ export class HUD {
         <!-- Explore Mode Launcher Drawer -->
         <div class="hud-card dropdown-panel ${this.openDrawer === 'explore' ? 'open' : ''}">
           <div class="panel-heading">${t(this.lang, 'exploreTitle')}</div>
-          <button class="explore-card-btn ${this.exploreMode === 'drive' ? 'active' : ''}" data-explore="drive">
-            <span class="explore-card-icon">🚗</span>
-            <div>
-              <div class="explore-card-title">${t(this.lang, 'modeDrive')}</div>
-              <div class="explore-card-desc">${t(this.lang, 'modeDriveDesc')}</div>
-            </div>
-          </button>
-          <button class="explore-card-btn ${this.exploreMode === 'walk' ? 'active' : ''}" data-explore="walk">
-            <span class="explore-card-icon">🚶</span>
-            <div>
-              <div class="explore-card-title">${t(this.lang, 'modeWalk')}</div>
-              <div class="explore-card-desc">${t(this.lang, 'modeWalkDesc')}</div>
-            </div>
-          </button>
-          <button class="explore-card-btn ${this.exploreMode === 'metro-ride' ? 'active' : ''}" data-explore="metro-ride">
-            <span class="explore-card-icon">🚇</span>
-            <div>
-              <div class="explore-card-title">${t(this.lang, 'modeMetro')}</div>
-              <div class="explore-card-desc">${t(this.lang, 'modeMetroDesc')}</div>
-            </div>
-          </button>
-          <button class="explore-card-btn ${this.exploreMode === 'drone' ? 'active' : ''}" data-explore="drone">
-            <span class="explore-card-icon">🛸</span>
-            <div>
-              <div class="explore-card-title">${t(this.lang, 'modeDrone')}</div>
-              <div class="explore-card-desc">${t(this.lang, 'modeDroneDesc')}</div>
-            </div>
-          </button>
+          <div class="panel-body">
+            <button class="explore-card-btn ${this.exploreMode === 'drive' ? 'active' : ''}" data-explore="drive">
+              <span class="explore-card-icon">${ICON.car}</span>
+              <div>
+                <div class="explore-card-title">${t(this.lang, 'modeDrive')}</div>
+                <div class="explore-card-desc">${t(this.lang, 'modeDriveDesc')}</div>
+              </div>
+            </button>
+            <button class="explore-card-btn ${this.exploreMode === 'walk' ? 'active' : ''}" data-explore="walk">
+              <span class="explore-card-icon">${ICON.walk}</span>
+              <div>
+                <div class="explore-card-title">${t(this.lang, 'modeWalk')}</div>
+                <div class="explore-card-desc">${t(this.lang, 'modeWalkDesc')}</div>
+              </div>
+            </button>
+            <button class="explore-card-btn ${this.exploreMode === 'metro-ride' ? 'active' : ''}" data-explore="metro-ride">
+              <span class="explore-card-icon">${ICON.subway}</span>
+              <div>
+                <div class="explore-card-title">${t(this.lang, 'modeMetro')}</div>
+                <div class="explore-card-desc">${t(this.lang, 'modeMetroDesc')}</div>
+              </div>
+            </button>
+            <button class="explore-card-btn ${this.exploreMode === 'drone' ? 'active' : ''}" data-explore="drone">
+              <span class="explore-card-icon">${ICON.drone}</span>
+              <div>
+                <div class="explore-card-title">${t(this.lang, 'modeDrone')}</div>
+                <div class="explore-card-desc">${t(this.lang, 'modeDroneDesc')}</div>
+              </div>
+            </button>
+          </div>
         </div>
 
         <!-- Layers Drawer -->
         <div class="hud-card dropdown-panel ${this.openDrawer === 'layers' ? 'open' : ''}">
           <div class="panel-heading">${t(this.lang, 'layers')}</div>
-          ${this.renderLayerToggle('metro1', '#0077c8', t(this.lang, 'layerMetro1'))}
-          ${this.renderLayerToggle('waterbus', '#f59e0b', t(this.lang, 'layerWaterbus'))}
-          ${this.renderLayerToggle('buses', '#22c55e', t(this.lang, 'layerBuses'))}
-          ${this.renderLayerToggle('flights', '#e11d48', t(this.lang, 'layerFlights'))}
-          <label class="layer-toggle">
-            <span class="layer-toggle-left">
-              <span class="layer-swatch" style="background:#22c55e"></span>
-              <span>${t(this.lang, 'toggleLiveAdsb')}</span>
-            </span>
-            <input type="checkbox" id="toggle-live-adsb" ${this.liveAdsbEnabled ? 'checked' : ''} />
-          </label>
-          ${this.renderLayerToggle('plannedMetro', '#f97316', t(this.lang, 'layerPlannedMetro'))}
-          ${this.renderLayerToggle('simulatePlannedMetro', '#fb923c', t(this.lang, 'layerSimPlanned'))}
-          ${this.renderLayerToggle('buildings3d', '#94a3b8', t(this.lang, 'layerBuildings'))}
+          <div class="panel-body">
+            ${this.renderLayerToggle('metro1', '#005eb8', t(this.lang, 'layerMetro1'))}
+            ${this.renderLayerToggle('waterbus', '#f2b705', t(this.lang, 'layerWaterbus'))}
+            ${this.renderLayerToggle('buses', '#0f8a5f', t(this.lang, 'layerBuses'))}
+            ${this.renderLayerToggle('flights', '#d9381e', t(this.lang, 'layerFlights'))}
+            <label class="layer-toggle">
+              <span class="layer-toggle-left">
+                <span class="layer-swatch" style="background:#0f8a5f"></span>
+                <span>${t(this.lang, 'toggleLiveAdsb')}</span>
+              </span>
+              <input type="checkbox" id="toggle-live-adsb" ${this.liveAdsbEnabled ? 'checked' : ''} />
+            </label>
+            ${this.renderLayerToggle('plannedMetro', '#f97316', t(this.lang, 'layerPlannedMetro'))}
+            ${this.renderLayerToggle('simulatePlannedMetro', '#ea580c', t(this.lang, 'layerSimPlanned'))}
+            ${this.renderLayerToggle('buildings3d', '#524e46', t(this.lang, 'layerBuildings'))}
+          </div>
         </div>
 
         <!-- Camera Presets Drawer -->
         <div class="hud-card dropdown-panel ${this.openDrawer === 'cameras' ? 'open' : ''}">
           <div class="panel-heading">${t(this.lang, 'cameras')}</div>
-          ${CAMERA_PRESETS.map(
-            (p) =>
-              `<button class="preset-btn" data-preset="${p.id}">${p.name[this.lang]}</button>`
-          ).join('')}
+          <div class="panel-body">
+            ${CAMERA_PRESETS.map(
+              (p) =>
+                `<button class="preset-btn" data-preset="${p.id}">${p.name[this.lang]}</button>`
+            ).join('')}
+          </div>
         </div>
 
         <!-- Live Radar Drawer -->
         <div class="hud-card dropdown-panel ${this.openDrawer === 'radar' ? 'open' : ''}">
           <div class="panel-heading">${t(this.lang, 'radarTitle')}</div>
-          <div class="radar-filters">
-            <button class="radar-filter-btn ${this.radarFilter === 'metro' ? 'active' : ''}" data-rfilter="metro">${t(this.lang, 'metro')}</button>
-            <button class="radar-filter-btn ${this.radarFilter === 'waterbus' ? 'active' : ''}" data-rfilter="waterbus">${t(this.lang, 'waterbus')}</button>
-            <button class="radar-filter-btn ${this.radarFilter === 'bus' ? 'active' : ''}" data-rfilter="bus">${t(this.lang, 'bus')}</button>
-            <button class="radar-filter-btn ${this.radarFilter === 'flight' ? 'active' : ''}" data-rfilter="flight">${t(this.lang, 'flights')}</button>
+          <div class="panel-body">
+            <div class="radar-filters">
+              <button class="radar-filter-btn ${this.radarFilter === 'metro' ? 'active' : ''}" data-rfilter="metro">${t(this.lang, 'metro')}</button>
+              <button class="radar-filter-btn ${this.radarFilter === 'waterbus' ? 'active' : ''}" data-rfilter="waterbus">${t(this.lang, 'waterbus')}</button>
+              <button class="radar-filter-btn ${this.radarFilter === 'bus' ? 'active' : ''}" data-rfilter="bus">${t(this.lang, 'bus')}</button>
+              <button class="radar-filter-btn ${this.radarFilter === 'flight' ? 'active' : ''}" data-rfilter="flight">${t(this.lang, 'flights')}</button>
+            </div>
+            <div class="radar-list" id="hud-radar-list"></div>
           </div>
-          <div class="radar-list" id="hud-radar-list"></div>
         </div>
       </div>
 
       <!-- Bottom Left: Vehicle Inspector -->
       <div class="hud-card hud-vehicle-card" id="hud-vehicle-card"></div>
 
-      <!-- Bottom Right: Active Pilot / Explore HUD -->
+      <!-- Bottom Right: Active Pilot / Explore Console -->
       <div class="hud-card hud-pilot-card ${this.exploreMode !== 'none' ? 'open' : ''}" id="hud-pilot-card">
         ${this.renderPilotCardInner()}
       </div>
@@ -524,16 +549,16 @@ export class HUD {
       <!-- Subtle Hint -->
       <div class="hud-hint ${this.exploreMode !== 'none' ? 'hidden' : ''}" id="hud-hint">${t(this.lang, 'hintClick')}</div>
 
-      <!-- Bottom Center: Playback, Quick Time Chips & Time Scrubber -->
+      <!-- Bottom Center: Mechanical Time & Playback Dock -->
       <div class="hud-card hud-bottom-center">
         <button class="tool-btn" data-action="pause" title="${t(this.lang, this.paused ? 'play' : 'pause')}">
-          ${this.paused ? '▶' : '⏸'}
+          ${this.paused ? ICON.play : ICON.pause}
         </button>
         <input class="time-slider" id="hud-time-slider" type="range" min="0" max="86399" step="60" value="30600" />
         <div class="time-presets">
-          <button class="time-chip" data-time-sec="30600">🌅 ${t(this.lang, 'morningRush')}</button>
-          <button class="time-chip" data-time-sec="63900">🌇 ${t(this.lang, 'sunsetTime')}</button>
-          <button class="time-chip" data-time-sec="73800">🌃 ${t(this.lang, 'nightTime')}</button>
+          <button class="time-chip" data-time-sec="30600">${t(this.lang, 'morningRush')}</button>
+          <button class="time-chip" data-time-sec="63900">${t(this.lang, 'sunsetTime')}</button>
+          <button class="time-chip" data-time-sec="73800">${t(this.lang, 'nightTime')}</button>
         </div>
         <div class="speed-group">
           ${[1, 5, 20, 60]
@@ -543,7 +568,7 @@ export class HUD {
             )
             .join('')}
         </div>
-        <button class="tool-btn" data-action="live">● ${t(this.lang, 'now')}</button>
+        <button class="tool-btn" data-action="live">${t(this.lang, 'now')}</button>
       </div>
     `;
 
@@ -575,18 +600,18 @@ export class HUD {
   private renderPilotCardInner(): string {
     if (this.exploreMode === 'none') return '';
     const meta: Record<Exclude<ExploreMode, 'none'>, { icon: string; titleKey: string }> = {
-      drive: { icon: '🚗', titleKey: 'modeDrive' },
-      walk: { icon: '🚶', titleKey: 'modeWalk' },
-      'metro-ride': { icon: '🚇', titleKey: 'modeMetro' },
-      drone: { icon: '🛸', titleKey: 'modeDrone' }
+      drive: { icon: ICON.car, titleKey: 'modeDrive' },
+      walk: { icon: ICON.walk, titleKey: 'modeWalk' },
+      'metro-ride': { icon: ICON.subway, titleKey: 'modeMetro' },
+      drone: { icon: ICON.drone, titleKey: 'modeDrone' }
     };
     const info = meta[this.exploreMode];
 
     const controlsHtml =
       this.exploreMode === 'metro-ride'
         ? `
-          <div class="vc-field-val" id="pilot-metro-info" style="font-size:11.5px;color:#cbd5e1">Metro Line 1</div>
-          <button class="vc-follow-btn" data-action="switch-metro">⇄ ${t(this.lang, 'switchTrain')}</button>
+          <div class="vc-field-val" id="pilot-metro-info" style="font-size:11.5px">Metro Line 1</div>
+          <button class="vc-follow-btn" data-action="switch-metro">${t(this.lang, 'switchTrain')}</button>
         `
         : `
           <div class="pilot-dpad">
@@ -602,10 +627,10 @@ export class HUD {
               ${
                 this.exploreMode === 'drone'
                   ? `
-                    <button class="key-btn" style="height:30px" data-vkey="up">▲ UP</button>
-                    <button class="key-btn" style="height:30px" data-vkey="down">▼ DN</button>
+                    <button class="key-btn" style="height:32px" data-vkey="up">UP ▲</button>
+                    <button class="key-btn" style="height:32px" data-vkey="down">DN ▼</button>
                   `
-                  : `<button class="key-btn" style="height:64px" data-vkey="boost">⚡ BOOST</button>`
+                  : `<button class="key-btn" style="height:72px" data-vkey="boost">BOOST</button>`
               }
             </div>
           </div>
@@ -616,20 +641,22 @@ export class HUD {
 
     return `
       <div class="pilot-header">
-        <div class="pilot-mode-badge"><span>${info.icon}</span><span>${t(this.lang, info.titleKey)}</span></div>
+        <div class="pilot-mode-badge">${info.icon}<span>${t(this.lang, info.titleKey)}</span></div>
         <button class="pilot-exit-btn" data-action="exit-explore">${t(this.lang, 'exitExplore')}</button>
       </div>
-      <div class="pilot-telemetry">
-        <div>
-          <div class="vc-field-label">${t(this.lang, 'speedLabel')}</div>
-          <div><span class="pilot-num" id="pilot-speed">0</span><span class="pilot-unit">km/h</span></div>
+      <div class="pilot-body">
+        <div class="pilot-telemetry">
+          <div>
+            <div class="vc-field-label">${t(this.lang, 'speedLabel')}</div>
+            <div><span class="pilot-num" id="pilot-speed">0</span><span class="pilot-unit">km/h</span></div>
+          </div>
+          <div>
+            <div class="vc-field-label">${t(this.lang, 'altitudeLabel')}</div>
+            <div><span class="pilot-num" id="pilot-alt">0</span><span class="pilot-unit">m</span></div>
+          </div>
         </div>
-        <div>
-          <div class="vc-field-label">${t(this.lang, 'altitudeLabel')}</div>
-          <div><span class="pilot-num" id="pilot-alt">0</span><span class="pilot-unit">m</span></div>
-        </div>
+        ${controlsHtml}
       </div>
-      ${controlsHtml}
     `;
   }
 
@@ -705,7 +732,6 @@ export class HUD {
       this.cb.onSyncLive();
     });
 
-    // Clicking any stat pill opens the Radar drawer filtered to that category!
     this.root.querySelectorAll<HTMLButtonElement>('[data-radar]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const filter = btn.dataset.radar as RadarFilter;
