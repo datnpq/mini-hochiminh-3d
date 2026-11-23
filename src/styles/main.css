@@ -1,0 +1,1195 @@
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
+:root {
+  --glass-bg: rgba(15, 23, 42, 0.78);
+  --glass-bg-strong: rgba(15, 23, 42, 0.88);
+  --glass-border: rgba(148, 163, 184, 0.22);
+  --glass-highlight: rgba(255, 255, 255, 0.08);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --accent: #38bdf8;
+  --accent-strong: #0284c7;
+  --live-green: #22c55e;
+  --shadow: 0 14px 36px rgba(2, 6, 23, 0.48);
+  --radius: 16px;
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --smooth: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#app,
+#map {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #0b1120;
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+#immersive {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s var(--smooth);
+}
+
+#immersive.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.immersive-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+}
+
+.immersive-canvas:active {
+  cursor: grabbing;
+}
+
+#hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Keyframes for lively, bouncy UI */
+@keyframes hudDropIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes hudRiseIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 24px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes sonarPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+@keyframes floatBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes shimmerMove {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes countPop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.32);
+    color: #7dd3fc;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes toastIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -18px) scale(0.88);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+.hud-card {
+  pointer-events: auto;
+  background: var(--glass-bg);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow), inset 0 1px 0 var(--glass-highlight);
+  border-radius: var(--radius);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.hud-card:hover {
+  border-color: rgba(148, 163, 184, 0.34);
+}
+
+/* Top-Left Brand, Live Weather & Clock */
+.hud-top-left {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 13px 16px;
+  min-width: 295px;
+  animation: hudDropIn 0.65s var(--spring) both;
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.brand-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.brand-dot-wrap {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #38bdf8, #0077c8);
+  box-shadow: 0 0 12px #38bdf8;
+  position: relative;
+  z-index: 2;
+}
+
+.brand-dot-ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.55);
+  animation: sonarPulse 2.2s ease-out infinite;
+}
+
+.brand-title h1 {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(90deg, #ffffff, #bae6fd);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.brand-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.clock-box {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 600;
+  color: #e0f2fe;
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 4px 10px;
+  border-radius: 9px;
+  box-shadow: inset 0 0 12px rgba(56, 189, 248, 0.12);
+}
+
+/* Live Status & Weather Strip */
+.live-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.14);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.32);
+}
+
+.live-badge.sim {
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+  border-color: rgba(56, 189, 248, 0.28);
+}
+
+.live-dot-wrap {
+  position: relative;
+  width: 7px;
+  height: 7px;
+}
+
+.live-dot {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--live-green);
+}
+
+.live-badge.sim .live-dot {
+  background: #38bdf8;
+}
+
+.live-dot-ping {
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: var(--live-green);
+  animation: sonarPulse 1.8s ease-out infinite;
+}
+
+.live-badge.sim .live-dot-ping {
+  background: #38bdf8;
+}
+
+.weather-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.weather-icon {
+  display: inline-block;
+  animation: floatBob 3s ease-in-out infinite;
+}
+
+/* Interactive Stat Pills */
+.stats-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 9px;
+  flex-wrap: wrap;
+}
+
+.stat-pill {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 4px 9px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.22s var(--spring), background 0.18s ease, border-color 0.18s ease;
+}
+
+.stat-pill:hover {
+  transform: translateY(-2px) scale(1.04);
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #ffffff;
+}
+
+.stat-pill:active {
+  transform: scale(0.93);
+}
+
+.stat-pill strong {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.stat-pill strong.pop {
+  animation: countPop 0.35s var(--spring);
+}
+
+.stat-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+/* Top-Right Controls */
+.hud-top-right {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  animation: hudDropIn 0.65s var(--spring) 0.08s both;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px;
+}
+
+.tool-btn {
+  pointer-events: auto;
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 11px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.22s var(--spring), background 0.18s ease, border-color 0.18s ease, box-shadow 0.2s ease;
+  white-space: nowrap;
+}
+
+.tool-btn:hover {
+  background: rgba(255, 255, 255, 0.11);
+  transform: translateY(-1.5px);
+}
+
+.tool-btn:active {
+  transform: scale(0.92);
+}
+
+.tool-btn.active {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.28), rgba(2, 132, 199, 0.22));
+  border-color: rgba(56, 189, 248, 0.58);
+  color: #bae6fd;
+  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.24);
+}
+
+/* Bouncy Animated Dropdown Panels */
+.dropdown-panel {
+  width: 310px;
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
+  transform-origin: top right;
+  pointer-events: none;
+  position: absolute;
+  top: 52px;
+  right: 0;
+  transition: opacity 0.24s var(--smooth), transform 0.34s var(--spring);
+}
+
+.dropdown-panel.open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.panel-heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.layer-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 12.5px;
+  transition: background 0.16s, transform 0.2s var(--spring);
+}
+
+.layer-toggle:hover {
+  background: rgba(255, 255, 255, 0.07);
+  transform: translateX(2px);
+}
+
+.layer-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.layer-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.layer-toggle input[type='checkbox'] {
+  accent-color: #38bdf8;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.preset-btn {
+  appearance: none;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-align: left;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.22s var(--spring), background 0.16s, border-color 0.16s;
+}
+
+.preset-btn:hover {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.45);
+  transform: translateX(4px);
+}
+
+.preset-btn:active {
+  transform: scale(0.96);
+}
+
+/* Live Radar Vehicle List */
+.radar-filters {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.radar-filter-btn {
+  flex: 1;
+  appearance: none;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s var(--spring);
+}
+
+.radar-filter-btn.active {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #e0f2fe;
+}
+
+.radar-list {
+  max-height: 290px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-right: 2px;
+}
+
+.radar-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.radar-list::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+}
+
+.radar-item {
+  appearance: none;
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-family: inherit;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  transition: transform 0.22s var(--spring), background 0.15s, border-color 0.15s;
+}
+
+.radar-item:hover {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.42);
+  transform: translateX(3px);
+}
+
+.radar-item:active {
+  transform: scale(0.96);
+}
+
+.radar-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.radar-item-name {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.radar-item-sub {
+  font-size: 10.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.radar-item-speed {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #7dd3fc;
+  flex-shrink: 0;
+}
+
+/* Floating Toast Notification */
+.hud-toast {
+  position: absolute;
+  top: 74px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  padding: 8px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #f0f9ff;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 999px;
+  box-shadow: 0 10px 28px rgba(2, 132, 199, 0.32);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.hud-toast.show {
+  opacity: 1;
+  animation: toastIn 0.4s var(--spring) both;
+}
+
+/* Bottom-Center Time Control */
+.hud-bottom-center {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 32px);
+  animation: hudRiseIn 0.7s var(--spring) 0.14s both;
+}
+
+.time-slider {
+  width: 155px;
+  accent-color: #38bdf8;
+  cursor: pointer;
+}
+
+.speed-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3px;
+  border-radius: 9px;
+}
+
+.speed-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: transform 0.2s var(--spring), background 0.15s, color 0.15s;
+}
+
+.speed-btn:hover {
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.speed-btn:active {
+  transform: scale(0.9);
+}
+
+.speed-btn.active {
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  color: #ffffff;
+  box-shadow: 0 3px 12px rgba(56, 189, 248, 0.35);
+}
+
+.time-presets {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.time-chip {
+  appearance: none;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s var(--spring), background 0.15s, color 0.15s;
+}
+
+.time-chip:hover {
+  background: rgba(56, 189, 248, 0.2);
+  color: #ffffff;
+  transform: translateY(-1.5px);
+}
+
+.time-chip:active {
+  transform: scale(0.92);
+}
+
+/* Bottom-Left Vehicle Inspector */
+.hud-vehicle-card {
+  position: absolute;
+  bottom: 80px;
+  left: 16px;
+  width: 320px;
+  padding: 15px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  opacity: 0;
+  transform: translateX(-22px) scale(0.94);
+  pointer-events: none;
+  transition: opacity 0.24s var(--smooth), transform 0.38s var(--spring);
+  overflow: hidden;
+}
+
+.hud-vehicle-card.open {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  pointer-events: auto;
+}
+
+.vc-top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.vc-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.vc-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vc-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.vc-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.vc-operator {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+}
+
+.vc-close {
+  appearance: none;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  transition: transform 0.2s var(--spring), background 0.15s;
+}
+
+.vc-close:hover {
+  color: #ffffff;
+  background: rgba(239, 68, 68, 0.35);
+  transform: rotate(90deg) scale(1.08);
+}
+
+.vc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 10px 11px;
+  border-radius: 11px;
+}
+
+.vc-field-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.vc-field-val {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.vc-progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.vc-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background-size: 200% 100%;
+  animation: shimmerMove 2.2s linear infinite;
+  transition: width 0.2s linear;
+}
+
+.vc-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.vc-follow-btn {
+  flex: 1;
+  appearance: none;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.18);
+  color: #e0f2fe;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.22s var(--spring), background 0.15s, box-shadow 0.2s;
+}
+
+.vc-follow-btn:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.28);
+}
+
+.vc-follow-btn:active {
+  transform: scale(0.95);
+}
+
+.vc-follow-btn.active {
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  border-color: #7dd3fc;
+  color: #ffffff;
+}
+
+.hud-hint {
+  position: absolute;
+  bottom: 74px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11.5px;
+  color: rgba(226, 232, 240, 0.88);
+  background: rgba(15, 23, 42, 0.68);
+  backdrop-filter: blur(8px);
+  padding: 5px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.hud-hint.hidden {
+  opacity: 0;
+}
+
+/* MapLibre Station Popup */
+.hcmc-popup .maplibregl-popup-content {
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(12px);
+  color: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  padding: 10px 13px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.48);
+}
+
+.hcmc-popup .maplibregl-popup-tip {
+  border-top-color: rgba(15, 23, 42, 0.92);
+}
+
+.station-popup-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.station-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+
+.station-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.station-popup-meta {
+  margin-top: 6px;
+  display: flex;
+  gap: 5px;
+}
+
+.popup-badge {
+  font-size: 10.5px;
+  background: rgba(56, 189, 248, 0.18);
+  color: #7dd3fc;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.popup-badge-planned {
+  background: rgba(249, 115, 22, 0.22);
+  color: #fdba74;
+}
+
+.tool-btn.explore-highlight {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(56, 189, 248, 0.24));
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #e0f2fe;
+}
+
+.explore-card-btn {
+  appearance: none;
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-family: inherit;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  transition: transform 0.22s var(--spring), background 0.16s, border-color 0.16s, box-shadow 0.2s;
+}
+
+.explore-card-btn:hover {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.5);
+  transform: translateX(4px) scale(1.01);
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.2);
+}
+
+.explore-card-btn:active {
+  transform: scale(0.96);
+}
+
+.explore-card-btn.active {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.35), rgba(16, 185, 129, 0.25));
+  border-color: #38bdf8;
+}
+
+.explore-card-icon {
+  font-size: 22px;
+  line-height: 1;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.explore-card-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.explore-card-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+/* Active Pilot / Explore HUD */
+.hud-pilot-card {
+  position: absolute;
+  bottom: 84px;
+  right: 54px;
+  width: 276px;
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(20px) scale(0.94);
+  pointer-events: none;
+  transition: opacity 0.24s var(--smooth), transform 0.38s var(--spring);
+}
+
+.hud-pilot-card.open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.pilot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pilot-mode-badge {
+  font-size: 12.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #e0f2fe;
+}
+
+.pilot-exit-btn {
+  appearance: none;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  background: rgba(239, 68, 68, 0.18);
+  color: #fecaca;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s var(--spring), background 0.15s;
+}
+
+.pilot-exit-btn:hover {
+  background: rgba(239, 68, 68, 0.35);
+  transform: scale(1.04);
+}
+
+.pilot-telemetry {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.pilot-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 17px;
+  font-weight: 700;
+  color: #7dd3fc;
+}
+
+.pilot-unit {
+  font-size: 10.5px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-left: 3px;
+}
+
+.pilot-dpad {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dpad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 34px);
+  grid-template-rows: repeat(2, 32px);
+  gap: 4px;
+}
+
+.key-btn {
+  appearance: none;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  background: rgba(255, 255, 255, 0.07);
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.12s var(--spring), background 0.12s, border-color 0.12s;
+}
+
+.key-btn:hover {
+  background: rgba(56, 189, 248, 0.22);
+}
+
+.key-btn.pressed,
+.key-btn:active {
+  background: #0284c7;
+  border-color: #7dd3fc;
+  color: #ffffff;
+  transform: scale(0.9);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
+}
+
+.dpad-vert {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.pilot-hints {
+  font-size: 10.5px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+@media (max-width: 960px) {
+  .hud-top-left {
+    top: 10px;
+    left: 10px;
+    min-width: 230px;
+    padding: 10px 12px;
+  }
+  .hud-top-right {
+    top: 132px;
+    right: 10px;
+  }
+  .toolbar {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: calc(100vw - 20px);
+  }
+  .time-presets {
+    display: none;
+  }
+  .time-slider {
+    width: 95px;
+  }
+  .hud-vehicle-card {
+    width: calc(100vw - 24px);
+    left: 12px;
+    bottom: 74px;
+  }
+}
